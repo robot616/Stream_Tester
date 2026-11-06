@@ -317,7 +317,7 @@
         }
 
         // ==========================================
-        // النظام الجديد المطوّر للاستخراج (يدعم الترتيب العشوائي ونظام JSON)
+        // النظام الجديد المطوّر للاستخراج
         // ==========================================
         function extractPlaylist() {
             const rawText = document.getElementById('autoInput').value;
@@ -328,7 +328,7 @@
 
             extractedChannels = [];
 
-            // 1. محاولة القراءة كـ JSON مباشرة (أدق وأسرع للملفات المنظمة مثل ملفك)
+            // 1. محاولة القراءة كـ JSON مباشرة 
             try {
                 let firstBracket = rawText.indexOf('[');
                 let lastBracket = rawText.lastIndexOf(']');
@@ -338,45 +338,48 @@
                     
                     if (Array.isArray(jsonArr)) {
                         jsonArr.forEach(item => {
-                            // سحب الاسم من أي مفتاح محتمل
-                            let name = item.title || item.name || item.channel || "قناة مستخرجة";
-                            let url = item.link || item.url || item.file || "";
-                            if (!url) return;
+                            // الدخول إلى array 'decoded_channels' الموجود في الملف الجديد
+                            if (item.decoded_channels && Array.isArray(item.decoded_channels)) {
+                                item.decoded_channels.forEach(ch => {
+                                    let name = ch.title || "قناة مستخرجة";
+                                    let url = ch.link || "";
+                                    if (!url) return;
 
-                            // تنظيف الرابط من أي headers مقترنة به مثل (user-agent) لتتوافق مع مشغلات الويب
-                            let cleanUrl = url.split('|')[0].trim();
-                            let isM3u8 = cleanUrl.toLowerCase().includes('.m3u8') || cleanUrl.toLowerCase().includes('.ts') || cleanUrl.toLowerCase().includes('.m3u');
+                                    // تنظيف الرابط
+                                    let cleanUrl = url.split('|')[0].trim();
+                                    cleanUrl = cleanUrl.split('?')[0].trim(); // تنظيف اضافي من المعاملات بعد ? إن وجدت في روابط معينة
+                                    let isM3u8 = cleanUrl.toLowerCase().includes('.m3u8') || cleanUrl.toLowerCase().includes('.ts') || cleanUrl.toLowerCase().includes('.m3u');
 
-                            let k1 = "", k2 = "";
-                            let allKeys = {};
+                                    let k1 = "", k2 = "";
+                                    let allKeys = {};
 
-                            // استخراج الشفرات
-                            if (item.api && typeof item.api === 'string') {
-                                let match = item.api.match(/([a-fA-F0-9]{32})["']?\s*[:=]\s*["']?([a-fA-F0-9]{32})/);
-                                if (match) {
-                                    k1 = match[1];
-                                    k2 = match[2];
-                                    allKeys[k1] = k2;
-                                }
-                            } else if (item.k1 && item.k2) {
-                                k1 = item.k1; k2 = item.k2;
-                                allKeys[k1] = k2;
+                                    // استخراج الشفرات من api
+                                    if (ch.api && typeof ch.api === 'string') {
+                                        let match = ch.api.match(/([a-fA-F0-9]{32})["']?\s*[:=]\s*["']?([a-fA-F0-9]{32})/);
+                                        if (match) {
+                                            k1 = match[1];
+                                            k2 = match[2];
+                                            allKeys[k1] = k2;
+                                        }
+                                    } 
+
+                                    // إدراج القناة
+                                    extractedChannels.push({
+                                        name: name,
+                                        url: cleanUrl, // الرابط النظيف بعد إزالة المعاملات
+                                        k1: k1,
+                                        k2: k2,
+                                        allKeys: isM3u8 ? {} : allKeys
+                                    });
+                                });
                             }
-
-                            extractedChannels.push({
-                                name: name,
-                                url: cleanUrl,
-                                k1: k1,
-                                k2: k2,
-                                allKeys: isM3u8 ? {} : allKeys
-                            });
                         });
 
                         if (extractedChannels.length > 0) {
                             filterByFormat('all');
                             selectChannel(0);
                             showToast(`تم استخراج ${extractedChannels.length} قناة بنجاح من تنسيق JSON ✓`);
-                            return; // تم الانتهاء بنجاح
+                            return; 
                         }
                     }
                 }
@@ -384,7 +387,7 @@
                 // إذا لم يكن JSON صحيحاً، نستكمل بالطريقة النصية بالأسفل
             }
 
-            // 2. القراءة النصية كطريقة بديلة (لملفات M3U والنصوص العشوائية)
+            // 2. القراءة النصية كطريقة بديلة 
             const lines = rawText.split(/\r?\n/);
             
             let pendingName = "";
@@ -453,7 +456,7 @@
                     newNameFound = jsonNameMatch[1];
                 }
 
-                // إصلاح الخلل: حفظ القناة فقط إذا كانت هناك بيانات كاملة سابقة
+                // حفظ القناة فقط إذا كانت هناك بيانات كاملة سابقة
                 if (newNameFound) {
                     if (pendingName && pendingUrl) savePendingChannel();
                     pendingName = newNameFound;
