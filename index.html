@@ -191,7 +191,7 @@
 
     <div class="controls-container">
         <div class="auto-extract-box">
-            <textarea id="autoInput" placeholder="الصق محتوى الملف بالكامل هنا..."></textarea>
+            <textarea id="autoInput" placeholder="الصق محتوى الملف بالكامل هنا (يدعم JSON و M3U)..."></textarea>
             <button class="extract-action-btn" onclick="extractPlaylist()">استخراج وفصل القنوات تلقائياً 🔄</button>
         </div>
 
@@ -317,7 +317,7 @@
         }
 
         // ==========================================
-        // التحديث الجديد لدالة الاستخراج لمعالجة الـ JSON بدقة
+        // النظام الجديد المطوّر للاستخراج (يدعم الترتيب العشوائي ونظام JSON)
         // ==========================================
         function extractPlaylist() {
             const rawText = document.getElementById('autoInput').value;
@@ -327,6 +327,64 @@
             }
 
             extractedChannels = [];
+
+            // 1. محاولة القراءة كـ JSON مباشرة (أدق وأسرع للملفات المنظمة مثل ملفك)
+            try {
+                let firstBracket = rawText.indexOf('[');
+                let lastBracket = rawText.lastIndexOf(']');
+                if (firstBracket !== -1 && lastBracket !== -1) {
+                    let jsonText = rawText.substring(firstBracket, lastBracket + 1);
+                    let jsonArr = JSON.parse(jsonText);
+                    
+                    if (Array.isArray(jsonArr)) {
+                        jsonArr.forEach(item => {
+                            // سحب الاسم من أي مفتاح محتمل
+                            let name = item.title || item.name || item.channel || "قناة مستخرجة";
+                            let url = item.link || item.url || item.file || "";
+                            if (!url) return;
+
+                            // تنظيف الرابط من أي headers مقترنة به مثل (user-agent) لتتوافق مع مشغلات الويب
+                            let cleanUrl = url.split('|')[0].trim();
+                            let isM3u8 = cleanUrl.toLowerCase().includes('.m3u8') || cleanUrl.toLowerCase().includes('.ts') || cleanUrl.toLowerCase().includes('.m3u');
+
+                            let k1 = "", k2 = "";
+                            let allKeys = {};
+
+                            // استخراج الشفرات
+                            if (item.api && typeof item.api === 'string') {
+                                let match = item.api.match(/([a-fA-F0-9]{32})["']?\s*[:=]\s*["']?([a-fA-F0-9]{32})/);
+                                if (match) {
+                                    k1 = match[1];
+                                    k2 = match[2];
+                                    allKeys[k1] = k2;
+                                }
+                            } else if (item.k1 && item.k2) {
+                                k1 = item.k1; k2 = item.k2;
+                                allKeys[k1] = k2;
+                            }
+
+                            extractedChannels.push({
+                                name: name,
+                                url: cleanUrl,
+                                k1: k1,
+                                k2: k2,
+                                allKeys: isM3u8 ? {} : allKeys
+                            });
+                        });
+
+                        if (extractedChannels.length > 0) {
+                            filterByFormat('all');
+                            selectChannel(0);
+                            showToast(`تم استخراج ${extractedChannels.length} قناة بنجاح من تنسيق JSON ✓`);
+                            return; // تم الانتهاء بنجاح
+                        }
+                    }
+                }
+            } catch (e) {
+                // إذا لم يكن JSON صحيحاً، نستكمل بالطريقة النصية بالأسفل
+            }
+
+            // 2. القراءة النصية كطريقة بديلة (لملفات M3U والنصوص العشوائية)
             const lines = rawText.split(/\r?\n/);
             
             let pendingName = "";
@@ -335,10 +393,8 @@
             let tempK1 = "";
             let tempK2 = "";
 
-            // دالة داخلية للحفظ عند اكتمال بيانات القناة
             const savePendingChannel = () => {
                 if (pendingUrl) {
-                    // تجميع k1 و k2 إذا كانوا في أسطر منفصلة
                     if (tempK1 && tempK2) {
                         pendingAllKeys[tempK1] = tempK2;
                     }
@@ -376,6 +432,12 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
+                // نهاية كتلة JSON (حفظ القناة)
+                if (line.startsWith("}")) {
+                    if (pendingUrl) savePendingChannel();
+                    continue;
+                }
+
                 // 1. التقاط الاسم
                 let isExtInf = line.toUpperCase().startsWith('#EXTINF');
                 let titleMatch = line.match(/"?(?:title|name)"?\s*:\s*["']([^"']+)["']/i);
@@ -391,44 +453,44 @@
                     newNameFound = jsonNameMatch[1];
                 }
 
-                // إذا وجدنا اسماً جديداً، وكان لدينا رابط محفوظ مسبقاً، فهذا يعني أن القناة السابقة اكتملت.
+                // إصلاح الخلل: حفظ القناة فقط إذا كانت هناك بيانات كاملة سابقة
                 if (newNameFound) {
-                    if (pendingUrl) savePendingChannel();
+                    if (pendingName && pendingUrl) savePendingChannel();
                     pendingName = newNameFound;
                 }
 
-                // 2. التقاط الرابط
+                // 2. التقاط الرابط وتنظيفه
                 let cleanLine = line.replace(/="[^"]+"/g, ''); 
-                let urlMatch = cleanLine.match(/https?:\/\/[^\s|<"']+/);
+                let urlMatch = cleanLine.match(/https?:\/\/[^\s|<"']+/); // يتوقف عند المسافة أو | لضمان تنظيف الرابط
                 if (urlMatch) {
                     pendingUrl = urlMatch[0];
                 }
 
-                // 3. التقاط الشفرات (إذا كانت في نفس السطر)
+                // 3. التقاط الشفرات
                 let keyRegex = /([a-fA-F0-9]{32})["']?\s*[:=]\s*["']?([a-fA-F0-9]{32})/g;
                 let match;
                 while ((match = keyRegex.exec(line)) !== null) {
                     pendingAllKeys[match[1]] = match[2];
                 }
 
-                // 4. التقاط الشفرات (إذا كانت في أسطر منفصلة مثل ملفك)
                 let k1Match = line.match(/"?(?:keyId|kid|k1)"?\s*:\s*["']?([a-fA-F0-9]{32})["']?/i);
                 let k2Match = line.match(/"?(?:key|k2)"?\s*:\s*["']?([a-fA-F0-9]{32})["']?/i);
                 if (k1Match) tempK1 = k1Match[1];
                 if (k2Match) tempK2 = k2Match[1];
-
-                // 5. نهاية كتلة JSON (حفظ القناة إذا أغلقنا القوس وكان لدينا رابط)
-                if (line === "}," || line === "}" || line === "};") {
-                    if (pendingUrl) savePendingChannel();
-                }
             }
             
-            // حفظ آخر قناة في الملف إذا تبقت
+            // حفظ آخر قناة
             if (pendingUrl) savePendingChannel();
 
             filterByFormat('all');
-            if (extractedChannels.length > 0) selectChannel(0);
+            if (extractedChannels.length > 0) {
+                selectChannel(0);
+                showToast(`تم استخراج ${extractedChannels.length} قناة بنجاح ✓`);
+            } else {
+                showToast("لم يتم العثور على قنوات صالحة!");
+            }
         }
+        // ==========================================
 
         function renderPlaylistUI() {
             const container = document.getElementById('playlistContainer');
