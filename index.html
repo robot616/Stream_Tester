@@ -246,8 +246,16 @@ function buildChannel(o) {
   if (hdr.origin) hdrParts.push('Origin=' + hdr.origin);
   if (hdr.cookie) hdrParts.push('Cookie=' + hdr.cookie);
 
+  // الـ User-Agent العادي (Mozilla/Chrome...) ما يحتاج علامة؛ العلامة فقط لما الهيدر فعلاً مطلوب
+  const genericUA = !hdr.ua || (/^Mozilla(\/[\d.]+)?(\s|$)/i.test(hdr.ua) && (/Chrome|Firefox|Safari|Gecko|AppleWebKit/i.test(hdr.ua) || /^Mozilla\/?[\d.]*$/i.test(hdr.ua)));
+  const need = [];
+  if (hdr.ua && !genericUA) need.push('User-Agent');
+  if (hdr.referer) need.push('Referer');
+  if (hdr.origin) need.push('Origin');
+  if (hdr.cookie) need.push('Cookie');
+
   return {
-    name, url, fmt, hdr, headers: hdrParts.join('&'), hasHdr: hdrParts.length > 0,
+    name, url, fmt, hdr, headers: hdrParts.join('&'), need, hasHdr: need.length > 0,
     k1: first, k2: first ? keys[first] : '', allKeys: keys,
     badKey: fmt === 'mpd' && keyTexts.length > 0 && !first
   };
@@ -417,7 +425,7 @@ function renderPlaylistUI() {
   container.innerHTML = shown.map(ch => {
     const i = extractedChannels.indexOf(ch);
     const tip = ch.name + (ch.hasHdr ? '\n🌐 تحتاج: ' + ch.headers.replace(/&(?=(User-Agent|Referer|Origin|Cookie)=)/g, '\n') : '') + (ch.badKey ? '\n⚠ شفرة معطوبة' : '');
-    const badge = ch.hasHdr ? `<span class="hdr-badge" title="${esc('تحتاج ' + [ch.hdr.ua && 'User-Agent', ch.hdr.referer && 'Referer', ch.hdr.origin && 'Origin', ch.hdr.cookie && 'Cookie'].filter(Boolean).join(' + '))}">🌐</span>` : '';
+    const badge = ch.hasHdr ? `<span class="hdr-badge" title="${esc('تحتاج ' + ch.need.join(' + '))}">🌐</span>` : '';
     return `<div class="playlist-item${activeCh === ch ? ' active' : ''}" id="ch-item-${i}">
       <div class="ch-name" onclick="selectChannel(${i})" title="${esc(tip)}">${i + 1}. ${badge}${ch.badKey ? '⚠ ' : ''}${esc(ch.name)}</div>
       <div class="ch-actions">
