@@ -54,6 +54,7 @@ button.clear-btn:hover{background:#c00}
 .ch-name{flex:1;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .playlist-item.active .ch-name{color:#88c79c;font-weight:bold}
 .hdr-badge{display:inline-block;background:#e67e22;color:#000;font-size:10px;font-weight:bold;border-radius:3px;padding:0 4px;margin:0 2px;cursor:help}
+.st-ok{background:#1dcf60}.st-dead{background:#e74c3c}.st-key{background:#f1c40f}.st-net,.st-other{background:#777}
 .ch-actions{display:flex;gap:5px}
 .icon-btn{background:#343c4a;color:#e2e8f0;border:none;border-radius:4px;padding:6px 8px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}
 .icon-btn:hover{background:#1dcf60;color:#000}
@@ -91,6 +92,7 @@ body{height:auto;overflow:visible}
     <div class="buttons-group">
       <button class="play-btn" onclick="testStream()">تشغيل القناة المحددة ▶</button>
       <button class="clear-btn" onclick="clearAll()">مسح الكل 🗑️</button>
+      <button class="clear-btn" id="probeBtn" style="background:#8e44ad" onclick="probeAll()" title="يجرب كل قناة فعلياً بدون هيدرز">فحص 🧪</button>
     </div>
     <div style="display:flex;gap:8px">
       <button class="nav-btn" onclick="playPrevChannel()" title="القناة السابقة"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 8h12z"/></svg></button>
@@ -246,13 +248,7 @@ function buildChannel(o) {
   if (hdr.origin) hdrParts.push('Origin=' + hdr.origin);
   if (hdr.cookie) hdrParts.push('Cookie=' + hdr.cookie);
 
-  // الـ User-Agent العادي (Mozilla/Chrome...) ما يحتاج علامة؛ العلامة فقط لما الهيدر فعلاً مطلوب
-  const genericUA = !hdr.ua || (/^Mozilla(\/[\d.]+)?(\s|$)/i.test(hdr.ua) && (/Chrome|Firefox|Safari|Gecko|AppleWebKit/i.test(hdr.ua) || /^Mozilla\/?[\d.]*$/i.test(hdr.ua)));
-  const need = [];
-  if (hdr.ua && !genericUA) need.push('User-Agent');
-  if (hdr.referer) need.push('Referer');
-  if (hdr.origin) need.push('Origin');
-  if (hdr.cookie) need.push('Cookie');
+  const need = [];   // يتحدد بعد الفحص الفعلي (probeAll)
 
   return {
     name, url, fmt, hdr, headers: hdrParts.join('&'), need, hasHdr: need.length > 0,
@@ -371,13 +367,68 @@ function extractPlaylist() {
     const bad = extractedChannels.filter(c => c.badKey).length;
     const hdr = extractedChannels.filter(c => c.hasHdr).length;
     let msg = `تم استخراج ${extractedChannels.length} قناة`;
-    if (hdr) msg += ` | 🌐 ${hdr} بهيدرز`;
     if (bad) msg += ` | ⚠ ${bad} شفرة معطوبة`;
     if (skippedEmbeds) msg += ` | ${skippedEmbeds} embed متجاهلة`;
     showToast(msg);
   } else {
     showToast("لم يتم العثور على قنوات صالحة!");
   }
+}
+
+/* ================================================================
+   الفحص الفعلي: يجرب كل قناة في المتصفح بدون هيدرز مخصصة ويصنفها من نتيجة التحميل الحقيقية
+   ok = تشتغل | hdr = مرفوضة (401/403 أو فشل شبكة) غالباً تحتاج UA/Referer | dead = 404 | key = خطأ شفرة | net = مهلة
+   ================================================================ */
+const ICONS = { ok: '✅', hdr: '🌐', dead: '❌', key: '⚠', net: '❓', other: '❓' };
+
+function classifyError(e) {
+  const code = e && e.code, status = e && e.data && e.data[1];
+  if (code === 1001) {
+    if ([401, 403, 407].includes(status)) return { s: 'hdr', msg: `🌐 مرفوضة HTTP ${status}: تحتاج User-Agent/Referer غالباً` };
+    return { s: 'dead', msg: `❌ HTTP ${status}: الرابط ميت أو منتهي` };
+  }
+  if (code >= 6000 && code < 7000) return { s: 'key', msg: `⚠ خطأ DRM/شفرة (${code})` };
+  if (code === 1002) return { s: 'hdr', msg: '🌐 فشل شبكة (غالباً 403 مخفي بسبب CORS): تحتاج UA/Referer غالباً، أو الرابط ميت' };
+  if (code === 1003) return { s: 'net', msg: '❓ انتهت المهلة: بطيئة أو ميتة' };
+  return { s: 'other', msg: '❓ خطأ ' + (code || (e && e.message) || '') };
+}
+
+async function probeChannel(ch, timeout = 12000) {
+  const v = document.createElement('video'); v.muted = true;
+  const p = new shaka.Player(v);
+  let late = null, timer;
+  p.addEventListener('error', ev => { late = late || ev.detail; });
+  try {
+    if (Object.keys(ch.allKeys).length) p.configure({ drm: { clearKeys: ch.allKeys } });
+    await Promise.race([p.load(ch.url), new Promise((_, rej) => { timer = setTimeout(() => rej({ code: 1003 }), timeout); })]);
+    clearTimeout(timer);
+    await new Promise(r => setTimeout(r, 3500));          // ننتظر أخطاء تحميل أول المقاطع
+    if (late) throw late;
+    return { s: 'ok', msg: '✅ تشتغل بدون هيدرز مخصصة' };
+  } catch (e) { clearTimeout(timer); return classifyError(e); }
+  finally { try { await p.destroy(); } catch (e) {} }
+}
+
+let probing = false;
+async function probeAll() {
+  if (probing) return;
+  if (!extractedChannels.length) { showToast('استخرج القنوات أولاً!'); return; }
+  probing = true;
+  const btn = document.getElementById('probeBtn');
+  const queue = extractedChannels.slice(); let done = 0;
+  const worker = async () => {
+    while (queue.length) {
+      const ch = queue.shift();
+      const r = await probeChannel(ch);
+      ch.probe = r; ch.hasHdr = r.s === 'hdr'; ch.need = ch.hasHdr ? ['User-Agent/Referer'] : [];
+      done++; btn.innerText = `فحص ${done}/${extractedChannels.length}`;
+      if (done % 5 === 0) renderPlaylistUI();
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker(), worker()]);
+  probing = false; btn.innerText = 'فحص 🧪'; renderPlaylistUI();
+  const c = k => extractedChannels.filter(x => x.probe && x.probe.s === k).length;
+  showToast(`✅ ${c('ok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
 }
 
 /* ================================================================ */
@@ -424,10 +475,10 @@ function renderPlaylistUI() {
   }
   container.innerHTML = shown.map(ch => {
     const i = extractedChannels.indexOf(ch);
-    const tip = ch.name + (ch.hasHdr ? '\n🌐 تحتاج: ' + ch.headers.replace(/&(?=(User-Agent|Referer|Origin|Cookie)=)/g, '\n') : '') + (ch.badKey ? '\n⚠ شفرة معطوبة' : '');
-    const badge = ch.hasHdr ? `<span class="hdr-badge" title="${esc('تحتاج ' + ch.need.join(' + '))}">🌐</span>` : '';
+    const pr = ch.probe, tip = ch.name + (pr ? '\n' + pr.msg : '') + (ch.badKey ? '\n⚠ شفرة معطوبة' : '');
+    const badge = pr ? `<span class="hdr-badge st-${pr.s}" title="${esc(pr.msg)}">${ICONS[pr.s]}</span>` : '';
     return `<div class="playlist-item${activeCh === ch ? ' active' : ''}" id="ch-item-${i}">
-      <div class="ch-name" onclick="selectChannel(${i})" title="${esc(tip)}">${i + 1}. ${badge}${ch.badKey ? '⚠ ' : ''}${esc(ch.name)}</div>
+      <div class="ch-name" onclick="selectChannel(${i})" title="${esc(tip)}">${i + 1}. ${badge}${!pr && ch.badKey ? '⚠ ' : ''}${esc(ch.name)}</div>
       <div class="ch-actions">
         <button class="icon-btn" onclick="copyExtCode(${i},event)" title="نسخ كود القناة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
         <button class="icon-btn" onclick="copyLink(${i},event)" title="نسخ الرابط المباشر"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
