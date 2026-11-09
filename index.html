@@ -101,7 +101,7 @@ body{height:auto;overflow:visible}
       <div id="badge-mpd" class="counter-badge counter-mpd" onclick="filterByFormat('mpd')">MPD <span class="count" id="count-mpd">0</span></div>
       <div id="badge-m3u8" class="counter-badge counter-m3u8" onclick="filterByFormat('m3u8')">M3U8 <span class="count" id="count-m3u8">0</span></div>
       <div id="badge-ts" class="counter-badge counter-ts" onclick="filterByFormat('ts')">TS <span class="count" id="count-ts">0</span></div>
-      <div id="badge-hdr" class="counter-badge counter-hdr" onclick="filterByFormat('hdr')" title="قنوات تحتاج User-Agent / Referer">🛡 <span class="count" id="count-hdr">0</span></div>
+      <div id="badge-hdr" class="counter-badge counter-hdr" onclick="filterByFormat('hdr')" title="قنوات تحتاج User-Agent / Referer">🌐 <span class="count" id="count-hdr">0</span></div>
       <button class="copy-all-btn" onclick="copyAllChannels()" title="نسخ أكواد جميع القنوات المستخرجة">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
@@ -363,7 +363,7 @@ function extractPlaylist() {
     const bad = extractedChannels.filter(c => c.badKey).length;
     const hdr = extractedChannels.filter(c => c.hasHdr).length;
     let msg = `تم استخراج ${extractedChannels.length} قناة`;
-    if (hdr) msg += ` | 🛡 ${hdr} بهيدرز`;
+    if (hdr) msg += ` | 🌐 ${hdr} بهيدرز`;
     if (bad) msg += ` | ⚠ ${bad} شفرة معطوبة`;
     if (skippedEmbeds) msg += ` | ${skippedEmbeds} embed متجاهلة`;
     showToast(msg);
@@ -416,8 +416,8 @@ function renderPlaylistUI() {
   }
   container.innerHTML = shown.map(ch => {
     const i = extractedChannels.indexOf(ch);
-    const tip = ch.name + (ch.hasHdr ? '\n🛡 تحتاج: ' + ch.headers.replace(/&(?=(User-Agent|Referer|Origin|Cookie)=)/g, '\n') : '') + (ch.badKey ? '\n⚠ شفرة معطوبة' : '');
-    const badge = ch.hasHdr ? `<span class="hdr-badge" title="${esc('تحتاج ' + [ch.hdr.ua && 'User-Agent', ch.hdr.referer && 'Referer', ch.hdr.origin && 'Origin', ch.hdr.cookie && 'Cookie'].filter(Boolean).join(' + '))}">🛡</span>` : '';
+    const tip = ch.name + (ch.hasHdr ? '\n🌐 تحتاج: ' + ch.headers.replace(/&(?=(User-Agent|Referer|Origin|Cookie)=)/g, '\n') : '') + (ch.badKey ? '\n⚠ شفرة معطوبة' : '');
+    const badge = ch.hasHdr ? `<span class="hdr-badge" title="${esc('تحتاج ' + [ch.hdr.ua && 'User-Agent', ch.hdr.referer && 'Referer', ch.hdr.origin && 'Origin', ch.hdr.cookie && 'Cookie'].filter(Boolean).join(' + '))}">🌐</span>` : '';
     return `<div class="playlist-item${activeCh === ch ? ' active' : ''}" id="ch-item-${i}">
       <div class="ch-name" onclick="selectChannel(${i})" title="${esc(tip)}">${i + 1}. ${badge}${ch.badKey ? '⚠ ' : ''}${esc(ch.name)}</div>
       <div class="ch-actions">
