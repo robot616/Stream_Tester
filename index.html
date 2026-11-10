@@ -122,7 +122,7 @@ body{height:auto;overflow:visible}
   </div>
   <div class="action-row">
     <div class="buttons-group">
-      <button class="play-btn" onclick="testStream()">تشغيل القناة المحددة ▶</button>
+      <button class="play-btn" id="playBtn" onclick="togglePlay()" title="تشغيل القناة المحددة / إيقافها إيقافاً تاماً">تشغيل/إيقاف ▶</button>
       <button class="clear-btn" onclick="clearAll()">مسح الكل 🗑️</button>
     </div>
     <div style="display:flex;gap:8px">
@@ -628,6 +628,22 @@ function clearAll() {
   if (currentShakaPlayer) { currentShakaPlayer.destroy(); currentShakaPlayer = null; }
 }
 
+let isPlaying = false;
+function setPlayState(on) {
+  isPlaying = on;
+  document.getElementById('playBtn').textContent = on ? 'تشغيل/إيقاف ⏹' : 'تشغيل/إيقاف ▶';
+}
+function togglePlay() { isPlaying ? stopStream() : testStream(); }
+function stopStream() {
+  if (currentShakaPlayer) { try { currentShakaPlayer.destroy(); } catch (e) {} currentShakaPlayer = null; }
+  try { if (window.jwplayer && document.getElementById('jw-player')) jwplayer('jw-player').remove(); } catch (e) {}
+  const v = document.getElementById('shaka-video');
+  if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
+  document.getElementById('video-container').innerHTML = '';
+  document.querySelectorAll('.playlist-item.active').forEach(el => el.classList.remove('active'));
+  setPlayState(false);
+}
+
 function testStream() {
   const url = document.getElementById('streamUrl').value.trim();
   const k1 = document.getElementById('keyId').value.trim();
@@ -640,6 +656,11 @@ function testStream() {
   if (currentShakaPlayer) { currentShakaPlayer.destroy(); currentShakaPlayer = null; }
 
   const ch = (activeCh && activeCh.url === url) ? activeCh : null;
+  setPlayState(true);
+  if (ch) {
+    const el = document.getElementById('ch-item-' + extractedChannels.indexOf(ch));
+    if (el) document.querySelectorAll('.playlist-item').forEach(x => x.classList.toggle('active', x === el));
+  }
   const isDash = ch ? ch.fmt === 'mpd' : /\.mpd(\/|$)/i.test(url.split('?')[0]);
   let keysMap = {};
   if (ch && Object.keys(ch.allKeys).length) keysMap = ch.allKeys;
@@ -665,6 +686,7 @@ function testStream() {
     if (Object.keys(keysMap).length) currentShakaPlayer.configure({ drm: { clearKeys: keysMap } });
     currentShakaPlayer.load(url).catch(function (e) {
       console.error('Error loading video', e);
+      setPlayState(false);
       alert("حدث خطأ أثناء تحميل البث، تأكد من صحة الرابط ومفاتيح فك التشفير.");
     });
   }
