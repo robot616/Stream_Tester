@@ -92,7 +92,6 @@ body{height:auto;overflow:visible}
     <div class="buttons-group">
       <button class="play-btn" onclick="testStream()">تشغيل القناة المحددة ▶</button>
       <button class="clear-btn" onclick="clearAll()">مسح الكل 🗑️</button>
-      <button class="clear-btn" id="probeBtn" style="background:#8e44ad" onclick="probeAll()" title="يجرب كل قناة فعلياً بدون هيدرز">فحص 🧪</button>
     </div>
     <div style="display:flex;gap:8px">
       <button class="nav-btn" onclick="playPrevChannel()" title="القناة السابقة"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 8h12z"/></svg></button>
@@ -370,6 +369,7 @@ function extractPlaylist() {
     if (bad) msg += ` | ⚠ ${bad} شفرة معطوبة`;
     if (skippedEmbeds) msg += ` | ${skippedEmbeds} embed متجاهلة`;
     showToast(msg);
+    probeAll();
   } else {
     showToast("لم يتم العثور على قنوات صالحة!");
   }
@@ -409,26 +409,27 @@ async function probeChannel(ch, timeout = 12000) {
   finally { try { await p.destroy(); } catch (e) {} }
 }
 
-let probing = false;
+let probeToken = 0;
 async function probeAll() {
-  if (probing) return;
-  if (!extractedChannels.length) { showToast('استخرج القنوات أولاً!'); return; }
-  probing = true;
-  const btn = document.getElementById('probeBtn');
-  const queue = extractedChannels.slice(); let done = 0;
+  const token = ++probeToken;                       // أي استخراج جديد أو مسح يلغي الفحص القديم
+  const list = extractedChannels.slice(), queue = list.slice();
+  const search = document.getElementById('searchInput'), ph = search.placeholder;
+  let done = 0;
   const worker = async () => {
-    while (queue.length) {
+    while (queue.length && token === probeToken) {
       const ch = queue.shift();
       const r = await probeChannel(ch);
+      if (token !== probeToken) return;
       ch.probe = r; ch.hasHdr = r.s === 'hdr'; ch.need = ch.hasHdr ? ['User-Agent/Referer'] : [];
-      done++; btn.innerText = `فحص ${done}/${extractedChannels.length}`;
-      if (done % 5 === 0) renderPlaylistUI();
+      done++; search.placeholder = `جاري الفحص ${done}/${list.length}...`;
+      if (done % 4 === 0) renderPlaylistUI();
     }
   };
   await Promise.all([worker(), worker(), worker(), worker(), worker()]);
-  probing = false; btn.innerText = 'فحص 🧪'; renderPlaylistUI();
-  const c = k => extractedChannels.filter(x => x.probe && x.probe.s === k).length;
-  showToast(`✅ ${c('ok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
+  if (token !== probeToken) { search.placeholder = ph; return; }
+  search.placeholder = ph; renderPlaylistUI();
+  const c = k => list.filter(x => x.probe && x.probe.s === k).length;
+  showToast(`انتهى الفحص: ✅ ${c('ok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
 }
 
 /* ================================================================ */
@@ -509,7 +510,7 @@ const playPrevChannel = () => stepChannel(-1);
 
 function clearAll() {
   ['autoInput', 'streamUrl', 'keyId', 'keyVal', 'searchInput'].forEach(id => document.getElementById(id).value = '');
-  extractedChannels = []; activeCh = null;
+  extractedChannels = []; activeCh = null; probeToken++;
   filterByFormat('all');
   document.getElementById('playlistContainer').innerHTML = `<div style="color:#777;text-align:center;font-size:12px;margin-top:20px">تم التطهير بنجاح</div>`;
   document.getElementById('listCount').innerText = '0';
