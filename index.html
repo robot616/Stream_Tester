@@ -31,11 +31,36 @@ button.clear-btn:hover{background:#c00}
 .counter-badge:hover{opacity:.8}
 .counter-badge.active{opacity:1;transform:scale(1.05);border-width:2px}
 .counter-badge span.count{padding:2px 6px;border-radius:4px;font-size:11px;color:#fff}
-.counter-all{border-color:#1dcf60;color:#1dcf60}.counter-all span.count{background:#1dcf60;color:#000}
+.counter-all{border-color:#444;color:#ccc;opacity:.9}.counter-all span.count{background:#343c4a;color:#fff}
+.counter-all.active{border-color:#1dcf60;color:#1dcf60}.counter-all.active span.count{background:#1dcf60;color:#000}
 .counter-mpd{border-color:#e74c3c;color:#e74c3c}.counter-mpd span.count{background:#e74c3c}
 .counter-m3u8{border-color:#3498db;color:#3498db}.counter-m3u8 span.count{background:#3498db}
 .counter-ts{border-color:#f1c40f;color:#f1c40f}.counter-ts span.count{background:#f1c40f;color:#000}
 .counter-hdr{border-color:#e67e22;color:#e67e22}.counter-hdr span.count{background:#e67e22}
+.group-wrap{position:relative;display:flex;align-items:center}
+.group-btn{background:#222;border:1px solid #444;color:#ccc;border-radius:6px;padding:7px 9px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.group-btn svg{width:20px;height:20px}
+.group-btn:hover{background:#2c2c2c;color:#fff;border-color:#555}
+.group-btn.active,.group-btn.active:hover{background:#1a3a24;border-color:#1dcf60;color:#1dcf60}
+.group-menu{display:none;position:fixed;box-sizing:border-box;overflow-y:auto;background:#1c1c1c;border:1px solid #444;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.7);z-index:500;padding:6px}
+.group-menu.open{display:block}
+.group-menu::-webkit-scrollbar{width:6px}
+.group-menu::-webkit-scrollbar-thumb{background:#444;border-radius:10px}
+.gm-title{font-size:11px;color:#1dcf60;padding:6px 8px 4px;border-bottom:1px solid #333;margin-bottom:4px}
+.gm-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:5px;cursor:pointer;font-size:13px}
+.gm-item:hover{background:#2c3a30}
+.gm-item.sel{background:#1a3a24;outline:1px solid #1dcf60}
+.gm-label{flex:1}
+.gm-copy{background:#343c4a;color:#e2e8f0;border:1px solid #475569;border-radius:5px;padding:5px 7px;cursor:pointer;display:flex;flex-shrink:0}
+.gm-copy:hover{background:#1dcf60;color:#000}
+.gm-copy svg{width:15px;height:15px}
+.gm-item .count{flex-shrink:0;min-width:18px;text-align:center}
+.playlist-box.flash{box-shadow:0 0 0 2px #1dcf60,0 0 14px rgba(29,207,96,.5)}
+.gm-list{max-height:170px;overflow-y:auto;margin:2px 4px 6px;border-inline-start:2px solid #1dcf60;padding-inline-start:6px}
+.gm-ch{font-size:12px;padding:4px 6px;border-radius:4px;cursor:pointer;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gm-ch:hover{background:#2c3a30;color:#fff}
+.gm-empty{font-size:12px;color:#777;padding:4px 6px}
+.gm-item .count{background:#343c4a;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:bold}
 .copy-all-btn,.nav-btn{color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}
 .copy-all-btn{background:#343c4a;border:1px solid #475569}
 .copy-all-btn:hover{background:#1dcf60;color:#000;border-color:#1dcf60}
@@ -48,6 +73,18 @@ button.clear-btn:hover{background:#c00}
 .playlist-box{flex:1.2;background:#181818;border:1px solid #333;border-radius:8px;height:100%;overflow-y:auto;padding:10px;box-sizing:border-box}
 .playlist-box::-webkit-scrollbar{width:6px}
 .playlist-box::-webkit-scrollbar-thumb{background:#444;border-radius:10px}
+.pl-head{position:sticky;top:-10px;background:#181818;z-index:10;padding:10px 0;margin-bottom:10px;border-bottom:1px solid #333}
+.pl-row{display:flex;align-items:center;gap:8px;min-height:34px}
+.pl-lbl{font-size:12px;color:#888;flex-shrink:0}
+.pl-type{flex:1;min-width:0;font-size:12px;font-weight:bold;color:#e2e8f0;line-height:1.4}
+.pl-prog{font-size:11px;color:#f1c40f;flex-shrink:0}
+.pl-count{background:#222;border:1px solid #444;color:#1dcf60;padding:6px 10px;border-radius:4px;font-size:14px;font-weight:bold;display:flex;align-items:center;justify-content:center;min-width:25px;flex-shrink:0}
+.pl-search-btn{background:#222;border:1px solid #444;color:#ccc;border-radius:4px;padding:7px 9px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pl-search-btn:hover{background:#2c2c2c;color:#fff;border-color:#555}
+.pl-search-btn.active{border-color:#1dcf60;color:#1dcf60;background:#1a3a24}
+.pl-search-btn svg{width:16px;height:16px}
+.pl-search{display:none;width:100%;margin-top:8px;padding:8px;background:#111;border:1px solid #444;color:#fff;border-radius:4px;font-size:13px;outline:none;box-sizing:border-box}
+.pl-search:focus{border-color:#1dcf60}
 .playlist-item{padding:8px;background:#222;margin-bottom:6px;border-radius:4px;transition:.2s;display:flex;justify-content:space-between;align-items:center;gap:10px;scroll-margin-top:60px}
 .playlist-item:hover{background:#2a2a2a;border-right:3px solid #1dcf60}
 .playlist-item.active{background:#1a3a24;border-right:3px solid #1dcf60}
@@ -99,10 +136,12 @@ body{height:auto;overflow:visible}
     </div>
     <div class="counters-container">
       <div id="badge-all" class="counter-badge counter-all active" onclick="filterByFormat('all')">الكل <span class="count" id="count-all">0</span></div>
-      <div id="badge-mpd" class="counter-badge counter-mpd" onclick="filterByFormat('mpd')">MPD <span class="count" id="count-mpd">0</span></div>
-      <div id="badge-m3u8" class="counter-badge counter-m3u8" onclick="filterByFormat('m3u8')">M3U8 <span class="count" id="count-m3u8">0</span></div>
-      <div id="badge-ts" class="counter-badge counter-ts" onclick="filterByFormat('ts')">TS <span class="count" id="count-ts">0</span></div>
-      <div id="badge-hdr" class="counter-badge counter-hdr" onclick="filterByFormat('hdr')" title="قنوات تحتاج User-Agent / Referer">🌐 <span class="count" id="count-hdr">0</span></div>
+      <div class="group-wrap" id="groupWrap">
+        <button class="group-btn" onclick="toggleGroupMenu(event)" title="تقسيم القنوات ونسخ كل مجموعة كأكواد">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+        <div class="group-menu" id="groupMenu" onclick="event.stopPropagation()"></div>
+      </div>
       <button class="copy-all-btn" onclick="copyAllChannels()" title="نسخ أكواد جميع القنوات المستخرجة">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       </button>
@@ -113,9 +152,15 @@ body{height:auto;overflow:visible}
 <div class="main-content">
   <div class="player-wrapper"><div id="video-container"></div></div>
   <div class="playlist-box">
-    <div style="display:flex;gap:8px;margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:10px;position:sticky;top:-10px;background:#181818;z-index:10;padding-top:10px">
-      <input type="text" id="searchInput" placeholder="بحث عن قناة..." oninput="renderPlaylistUI()" style="flex:1;padding:8px;background:#111;border:1px solid #444;color:#fff;border-radius:4px;font-size:13px;outline:none;min-width:0">
-      <div id="listCount" style="background:#222;border:1px solid #444;color:#1dcf60;padding:8px 12px;border-radius:4px;font-size:14px;font-weight:bold;display:flex;align-items:center;justify-content:center;min-width:25px">0</div>
+    <div class="pl-head">
+      <div class="pl-row">
+        <span class="pl-lbl">المعروض:</span>
+        <span class="pl-type" id="shownType"></span>
+        <span class="pl-prog" id="probeProg"></span>
+        <div class="pl-count" id="listCount" title="عدد القنوات المعروضة">0</div>
+        <button class="pl-search-btn" id="searchBtn" onclick="toggleSearch()" title="بحث عن قناة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      </div>
+      <input type="text" class="pl-search" id="searchInput" placeholder="بحث عن قناة..." oninput="renderPlaylistUI()" onkeydown="if(event.key==='Escape')toggleSearch(false)">
     </div>
     <div id="playlistContainer"><div style="color:#777;text-align:center;font-size:12px;margin-top:20px">لم يتم استخراج قنوات بعد</div></div>
   </div>
@@ -228,7 +273,8 @@ function buildChannel(o) {
 
   const path = url.split('?')[0].toLowerCase();
   let fmt;
-  if (/\.mpd(\/|$)/.test(path)) fmt = 'mpd';
+  if (!/^https?:/i.test(url) || /\.(mp4|mkv|flv|webm|mp3|aac|avi)$/.test(path)) fmt = 'other';
+  else if (/\.mpd(\/|$)/.test(path)) fmt = 'mpd';
   else if (/\.m3u8?(\/|$)/.test(path)) fmt = 'm3u8';
   else if (/\.ts$/.test(path)) fmt = 'ts';
   else if (String(o.type) === '2') { skippedEmbeds++; return null; }   // صفحة embed
@@ -413,7 +459,7 @@ let probeToken = 0;
 async function probeAll() {
   const token = ++probeToken;                       // أي استخراج جديد أو مسح يلغي الفحص القديم
   const list = extractedChannels.slice(), queue = list.slice();
-  const search = document.getElementById('searchInput'), ph = search.placeholder;
+  const prog = document.getElementById('probeProg');
   let done = 0;
   const worker = async () => {
     while (queue.length && token === probeToken) {
@@ -421,16 +467,78 @@ async function probeAll() {
       const r = await probeChannel(ch);
       if (token !== probeToken) return;
       ch.probe = r; ch.hasHdr = r.s === 'hdr'; ch.need = ch.hasHdr ? ['User-Agent/Referer'] : [];
-      done++; search.placeholder = `جاري الفحص ${done}/${list.length}...`;
+      done++; prog.textContent = `فحص ${done}/${list.length}`;
       if (done % 4 === 0) renderPlaylistUI();
     }
   };
   await Promise.all([worker(), worker(), worker(), worker(), worker()]);
-  if (token !== probeToken) { search.placeholder = ph; return; }
-  search.placeholder = ph; renderPlaylistUI();
+  if (token !== probeToken) { prog.textContent = ''; return; }
+  prog.textContent = ''; renderPlaylistUI();
   const c = k => list.filter(x => x.probe && x.probe.s === k).length;
   showToast(`انتهى الفحص: ✅ ${c('ok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
 }
+
+/* ===== مجموعات النسخ ===== */
+const pr_ = c => c.probe && c.probe.s;
+const GROUPS = {
+  mpd:   { label: 'MPD',            test: c => c.fmt === 'mpd' },
+  m3u8:  { label: 'M3U8',           test: c => c.fmt === 'm3u8' },
+  extra: { label: 'صيغ إضافية',     hint: 'TS وغيرها', test: c => c.fmt === 'ts' || c.fmt === 'other' },
+  bad:   { label: 'قنوات معطّلة',   hint: 'ميتة / شفرة خاطئة', test: c => c.badKey || ['dead', 'key'].includes(pr_(c)) },
+  ok:    { label: '✅ تشتغل بدون هيدرز', test: c => pr_(c) === 'ok' },
+  hdr:   { label: '🌐 مرفوضة (401 / 403) أو فشل شبكة', hint: 'غالباً تحتاج UA أو Referer', test: c => pr_(c) === 'hdr' },
+  dead:  { label: '❌ الرابط ميت', test: c => pr_(c) === 'dead' },
+  key:   { label: '⚠ خطأ في الشفرة', test: c => c.badKey || pr_(c) === 'key' },
+  net:   { label: '❓ انتهت المهلة', test: c => ['net', 'other'].includes(pr_(c)) }
+};
+const SECTIONS = [
+  { title: 'حسب الصيغة', items: ['mpd', 'm3u8', 'extra', 'bad'] },
+  { title: 'حسب نتيجة الفحص', items: ['ok', 'hdr', 'dead', 'key', 'net'] }
+];
+const COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+function renderGroupMenu() {
+  const menu = document.getElementById('groupMenu'), sc = menu.scrollTop;
+  menu.innerHTML = SECTIONS.map(sec => `<div class="gm-title">${sec.title}</div>` + sec.items.map(g => {
+    const G = GROUPS[g], n = extractedChannels.filter(G.test).length;
+    const hint = G.hint && !/[✅🌐❌⚠❓]/.test(G.label) ? ` <small style="color:#777">(${G.hint})</small>` : '';
+    return `<div class="gm-item${currentFilter === g ? ' sel' : ''}" onclick="applyGroupFilter('${g}')" title="عرض قنوات هذه المجموعة في قائمة القنوات">
+      <span class="gm-label">${G.label}${hint}</span><span class="count">${n}</span>
+      <button class="gm-copy" onclick="event.stopPropagation();copyGroup('${g}')" title="نسخ هذه المجموعة فقط كأكواد">${COPY_SVG}</button></div>`;
+  }).join('')).join('');
+  menu.scrollTop = sc;
+}
+function placeGroupMenu() {
+  const m = document.getElementById('groupMenu'), pb = document.querySelector('.playlist-box');
+  pb.scrollIntoView({ block: 'nearest' });                         // على الموبايل: يظهر مربع القنوات أولاً
+  const r = pb.getBoundingClientRect();
+  const top = Math.max(8, r.top), bottom = Math.min(window.innerHeight - 8, r.bottom);
+  m.style.left = r.left + 'px'; m.style.width = r.width + 'px';     // فوق مربع القنوات بالضبط
+  m.style.top = top + 'px'; m.style.maxHeight = Math.max(160, bottom - top) + 'px';
+}
+function applyGroupFilter(g) {
+  currentFilter = g;
+  document.querySelectorAll('.counter-badge').forEach(b => b.classList.remove('active'));
+  document.getElementById('groupMenu').classList.remove('open');
+  renderPlaylistUI();
+  const box = document.querySelector('.playlist-box');
+  box.scrollTop = 0;
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  box.classList.add('flash'); setTimeout(() => box.classList.remove('flash'), 900);
+}
+function copyGroup(g) {
+  const list = extractedChannels.filter(GROUPS[g].test);
+  if (!list.length) { showToast('لا توجد قنوات في هذه المجموعة'); return; }
+  navigator.clipboard.writeText(list.map(codeFor).join('\n')).then(() => showToast(`تم نسخ ${list.length} قناة ✓`));
+}
+function toggleGroupMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('groupMenu');
+  if (m.classList.toggle('open')) { renderGroupMenu(); placeGroupMenu(); }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('groupMenu').classList.remove('open'); });
+window.addEventListener('resize', () => document.getElementById('groupMenu').classList.remove('open'));
+document.addEventListener('click', () => document.getElementById('groupMenu').classList.remove('open'));
 
 /* ================================================================ */
 function codeFor(ch) {
@@ -446,6 +554,14 @@ function copyAllChannels() {
   navigator.clipboard.writeText(extractedChannels.map(codeFor).join('\n')).then(() => showToast(`تم نسخ ${extractedChannels.length} قناة بنجاح ✓`));
 }
 
+function toggleSearch(force) {
+  const inp = document.getElementById('searchInput'), btn = document.getElementById('searchBtn');
+  const open = force !== undefined ? force : inp.style.display !== 'block';
+  inp.style.display = open ? 'block' : 'none';
+  btn.classList.toggle('active', open);
+  if (open) inp.focus(); else if (inp.value) { inp.value = ''; renderPlaylistUI(); }
+}
+
 function filterByFormat(f) {
   currentFilter = f;
   document.querySelectorAll('.counter-badge').forEach(b => b.classList.remove('active'));
@@ -456,14 +572,16 @@ function filterByFormat(f) {
 function renderPlaylistUI() {
   const container = document.getElementById('playlistContainer');
   const term = document.getElementById('searchInput').value.toLowerCase().trim();
-  const cnt = { mpd: 0, m3u8: 0, ts: 0, hdr: 0 };
-  extractedChannels.forEach(c => { cnt[c.fmt]++; if (c.hasHdr) cnt.hdr++; });
   document.getElementById('count-all').innerText = extractedChannels.length;
-  ['mpd', 'm3u8', 'ts', 'hdr'].forEach(k => document.getElementById('count-' + k).innerText = cnt[k]);
+  renderGroupMenu();
+  const isGroup = currentFilter !== 'all' && !!GROUPS[currentFilter];
+  document.querySelector('.group-btn').classList.toggle('active', isGroup);
+  const typeEl = document.getElementById('shownType');
+  typeEl.textContent = !extractedChannels.length ? '' : (isGroup ? GROUPS[currentFilter].label : 'الكل');
+  typeEl.title = typeEl.textContent;
 
   const shown = extractedChannels.filter(c => {
-    if (currentFilter === 'hdr' && !c.hasHdr) return false;
-    if (currentFilter !== 'all' && currentFilter !== 'hdr' && c.fmt !== currentFilter) return false;
+    if (currentFilter !== 'all' && GROUPS[currentFilter] && !GROUPS[currentFilter].test(c)) return false;
     return !term || c.name.toLowerCase().includes(term);
   });
   document.getElementById('listCount').innerText = shown.length;
@@ -510,6 +628,7 @@ const playPrevChannel = () => stepChannel(-1);
 
 function clearAll() {
   ['autoInput', 'streamUrl', 'keyId', 'keyVal', 'searchInput'].forEach(id => document.getElementById(id).value = '');
+  toggleSearch(false);
   extractedChannels = []; activeCh = null; probeToken++;
   filterByFormat('all');
   document.getElementById('playlistContainer').innerHTML = `<div style="color:#777;text-align:center;font-size:12px;margin-top:20px">تم التطهير بنجاح</div>`;
