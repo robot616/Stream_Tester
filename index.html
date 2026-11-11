@@ -10,16 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/shaka-player.ui.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/controls.min.css">
 <style>
-/* ===== الخلفية للصفحة كلها — الإصلاح =====
-   المشكلة كانت إن الصورة محطوطة على .controls-container بس،
-   فكانت بتظهر تحت المربع اللي فوق بس.
-   الحل: الصورة بقت طبقة ثابتة على الـ body كله (::before)
-   + طبقة تعتيم داكنة فوقها (::after) عشان الكتابة تفضل واضحة
-   حتى لو الصورة فاتحة أو فيها ألوان متعارضة.
-   والـ body نفسه بقى شفاف عشان الطبقتين يبانوا،
-   وكل البوكسات بقت شبه شفافة + blur خفيف فالخلفية تبان من وراها
-   من غير ما تأثر على قراءة النص.
-*/
 html{background:#181818}
 body{margin:0;padding:0;background:transparent;color:#fff;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column;position:relative;z-index:0}
 body::before{content:"";position:fixed;inset:0;background:url('https://i.postimg.cc/9FJ0trLQ/Gemini-Generated-Image-8ly23a8ly23a8ly2.jpg') center/cover no-repeat;z-index:-2}
@@ -48,15 +38,11 @@ button.clear-btn:hover{background:#c00}
 .counter-badge span.count{padding:2px 6px;border-radius:4px;font-size:11px;color:#fff}
 .counter-all{border-color:#444;color:#ccc;opacity:.9}.counter-all span.count{background:#343c4a;color:#fff}
 .counter-all.active{border-color:#1dcf60;color:#1dcf60}.counter-all.active span.count{background:#1dcf60;color:#000}
-.counter-mpd{border-color:#e74c3c;color:#e74c3c}.counter-mpd span.count{background:#e74c3c}
-.counter-m3u8{border-color:#3498db;color:#3498db}.counter-m3u8 span.count{background:#3498db}
-.counter-ts{border-color:#f1c40f;color:#f1c40f}.counter-ts span.count{background:#f1c40f;color:#000}
-.counter-hdr{border-color:#e67e22;color:#e67e22}.counter-hdr span.count{background:#e67e22}
-.group-wrap{position:relative;display:flex;align-items:center}
 .group-btn{background:#222;border:1px solid #444;color:#ccc;border-radius:6px;padding:7px 9px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .group-btn svg{width:20px;height:20px}
 .group-btn:hover{background:#2c2c2c;color:#fff;border-color:#555}
 .group-btn.active,.group-btn.active:hover{background:#1a3a24;border-color:#1dcf60;color:#1dcf60}
+/* القايمة موجودة مباشرة جوه الـ body (مش جوه مربع التحكم) فبتظهر فوق مربع القنوات */
 .group-menu{display:none;position:fixed;box-sizing:border-box;overflow-y:auto;background:#1c1c1c;border:1px solid #444;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.7);z-index:500;padding:6px}
 .group-menu.open{display:block}
 .group-menu::-webkit-scrollbar{width:6px}
@@ -66,13 +52,8 @@ button.clear-btn:hover{background:#c00}
 .gm-item:hover{background:#2c3a30}
 .gm-item.sel{background:#1a3a24;outline:1px solid #1dcf60}
 .gm-label{flex:1}
-.gm-item .count{flex-shrink:0;min-width:18px;text-align:center}
+.gm-item .count{flex-shrink:0;min-width:18px;text-align:center;background:#343c4a;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:bold}
 .playlist-box.flash{box-shadow:0 0 0 2px #1dcf60,0 0 14px rgba(29,207,96,.5)}
-.gm-list{max-height:170px;overflow-y:auto;margin:2px 4px 6px;border-inline-start:2px solid #1dcf60;padding-inline-start:6px}
-.gm-ch{font-size:12px;padding:4px 6px;border-radius:4px;cursor:pointer;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gm-ch:hover{background:#2c3a30;color:#fff}
-.gm-empty{font-size:12px;color:#777;padding:4px 6px}
-.gm-item .count{background:#343c4a;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:bold}
 .copy-all-btn,.nav-btn{color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}
 .copy-all-btn{background:#343c4a;border:1px solid #475569;gap:6px;font-size:13px;font-weight:bold}
 .copy-all-btn:hover{background:#1dcf60;color:#000;border-color:#1dcf60}
@@ -100,8 +81,8 @@ button.clear-btn:hover{background:#c00}
 .playlist-item.active{background:#1a3a24;border-right:3px solid #1dcf60}
 .ch-name{flex:1;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .playlist-item.active .ch-name{color:#88c79c;font-weight:bold}
-.hdr-badge{display:inline-block;background:#e67e22;color:#000;font-size:10px;font-weight:bold;border-radius:3px;padding:0 4px;margin:0 2px;cursor:help}
-.st-ok{background:#1dcf60}.st-dead{background:#e74c3c}.st-key{background:#f1c40f}.st-net,.st-other{background:#777}
+.hdr-badge{display:inline-block;color:#000;font-size:10px;font-weight:bold;border-radius:3px;padding:0 4px;margin:0 2px;cursor:help}
+.st-ok{background:#1dcf60}.st-dead{background:#e74c3c}.st-key{background:#f1c40f}.st-hdr{background:#e67e22}.st-net,.st-other{background:#777}
 .ch-actions{display:flex;gap:5px}
 .icon-btn{background:#343c4a;color:#e2e8f0;border:none;border-radius:4px;padding:6px 8px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}
 .icon-btn:hover{background:#1dcf60;color:#000}
@@ -146,16 +127,13 @@ body{height:auto;overflow:visible}
     </div>
     <div class="counters-container">
       <div id="badge-all" class="counter-badge counter-all active" onclick="filterByFormat('all')">الكل <span class="count" id="count-all">0</span></div>
-      <button class="copy-all-btn" id="copyShownBtn" onclick="copyShown()" title="نسخ أكواد القنوات المعروضة في مربع القنوات">
+      <button class="copy-all-btn" onclick="copyShown()" title="نسخ أكواد القنوات المعروضة في مربع القنوات">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span id="listCount">0</span>
       </button>
-      <div class="group-wrap" id="groupWrap">
-        <button class="group-btn" onclick="toggleGroupMenu(event)" title="تقسيم القنوات ونسخ كل مجموعة كأكواد">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-        </button>
-        <div class="group-menu" id="groupMenu" onclick="event.stopPropagation()"></div>
-      </div>
+      <button class="group-btn" onclick="toggleGroupMenu(event)" title="تقسيم القنوات ونسخ كل مجموعة كأكواد">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      </button>
     </div>
   </div>
 </div>
@@ -174,6 +152,9 @@ body{height:auto;overflow:visible}
     <div id="playlistContainer"><div style="color:#777;text-align:center;font-size:12px;margin-top:20px">لم يتم استخراج قنوات بعد</div></div>
   </div>
 </div>
+
+<!-- قايمة تقسيم القنوات: ابن مباشر للـ body عشان تظهر فوق مربع القنوات -->
+<div class="group-menu" id="groupMenu" onclick="event.stopPropagation()"></div>
 <div id="toast">تم النسخ بنجاح</div>
 
 <script>
@@ -236,6 +217,14 @@ function parseKeys(texts) {
   return keys;
 }
 
+function addHdr(hdr, k, v) {
+  const n = norm(k);
+  if (!v) return;
+  if (UA_KEYS.includes(n)) hdr.ua = hdr.ua || v;
+  else if (REF_KEYS.includes(n)) hdr.referer = hdr.referer || v;
+  else if (ORI_KEYS.includes(n)) hdr.origin = hdr.origin || v;
+  else if (COOKIE_KEYS.includes(n)) hdr.cookie = hdr.cookie || v;
+}
 function parseHeaderString(str, hdr, keyTexts) {
   if (!str) return;
   str = str.trim();
@@ -245,18 +234,9 @@ function parseHeaderString(str, hdr, keyTexts) {
   str.split(/&(?=[A-Za-z][\w\-]*=)|\r?\n|;(?=\s*[A-Za-z][\w\-]*\s*[:=])/).forEach(p => {
     const m = p.match(/^\s*([A-Za-z][\w\-]*)\s*[=:]\s*([\s\S]*)$/);
     if (!m) return;
-    const k = norm(m[1]);
-    if (KEY_KEYS.includes(k) && keyTexts) keyTexts.push(m[2].trim());
+    if (KEY_KEYS.includes(norm(m[1])) && keyTexts) keyTexts.push(m[2].trim());
     else addHdr(hdr, m[1], m[2].trim());
   });
-}
-function addHdr(hdr, k, v) {
-  const n = norm(k);
-  if (!v) return;
-  if (UA_KEYS.includes(n)) hdr.ua = hdr.ua || v;
-  else if (REF_KEYS.includes(n)) hdr.referer = hdr.referer || v;
-  else if (ORI_KEYS.includes(n)) hdr.origin = hdr.origin || v;
-  else if (COOKIE_KEYS.includes(n)) hdr.cookie = hdr.cookie || v;
 }
 
 let skippedEmbeds = 0;
@@ -298,10 +278,8 @@ function buildChannel(o) {
   if (hdr.origin) hdrParts.push('Origin=' + hdr.origin);
   if (hdr.cookie) hdrParts.push('Cookie=' + hdr.cookie);
 
-  const need = [];
-
   return {
-    name, url, fmt, hdr, headers: hdrParts.join('&'), need, hasHdr: need.length > 0,
+    name, url, fmt, headers: hdrParts.join('&'),
     k1: first, k2: first ? keys[first] : '', allKeys: keys,
     badKey: fmt === 'mpd' && keyTexts.length > 0 && !first
   };
@@ -413,7 +391,6 @@ function extractPlaylist() {
   if (extractedChannels.length) {
     selectChannel(0);
     const bad = extractedChannels.filter(c => c.badKey).length;
-    const hdr = extractedChannels.filter(c => c.hasHdr).length;
     let msg = `تم استخراج ${extractedChannels.length} قناة`;
     if (bad) msg += ` | ⚠ ${bad} شفرة معطوبة`;
     if (skippedEmbeds) msg += ` | ${skippedEmbeds} embed متجاهلة`;
@@ -465,7 +442,7 @@ async function probeAll() {
       const ch = queue.shift();
       const r = await probeChannel(ch);
       if (token !== probeToken) return;
-      ch.probe = r; ch.hasHdr = r.s === 'hdr'; ch.need = ch.hasHdr ? ['User-Agent/Referer'] : [];
+      ch.probe = r;
       done++; prog.textContent = `فحص ${done}/${list.length}`;
       if (done % 4 === 0) renderPlaylistUI();
     }
