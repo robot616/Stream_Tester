@@ -415,25 +415,73 @@ function classifyError(e) {
   return { s: 'other', msg: '❓ خطأ ' + (code || (e && e.message) || '') };
 }
 
+/* ====== الفحص في الخلفية ======
+   1) مؤقت داخل Worker: المتصفح ما بيخنقوش لما التاب يبقى في الخلفية
+   2) صوت صامت + Web Lock + Wake Lock: بتشتغل أثناء الفحص فقط وبتتقفل أول ما يخلص */
+const timerWorker = new Worker(URL.createObjectURL(new Blob([
+  'onmessage=e=>{const d=e.data;setTimeout(()=>postMessage(d.id),d.ms)}'
+])));
+const waiters = new Map(); let tid = 0;
+timerWorker.onmessage = e => { const f = waiters.get(e.data); waiters.delete(e.data); if (f) f(); };
+const sleep = ms => new Promise(r => { const id = ++tid; waiters.set(id, r); timerWorker.postMessage({ id, ms }); });
+
+let keepAlive = null;
+async function startKeepAlive() {
+  stopKeepAlive();
+  const ka = { ctx: null, osc: null, wake: null, release: null, stopped: false };
+  keepAlive = ka; // يتسجل فوراً عشان stopKeepAlive تلاقيه حتى لو لسه بيتجهز
+  try {
+    ka.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    ka.osc = ka.ctx.createOscillator();
+    const g = ka.ctx.createGain();
+    ka.osc.frequency.value = 25;   // تردد غير مسموع
+    g.gain.value = 0.001;          // شبه صامت (لو مش كفاية جرب 0.005)
+    ka.osc.connect(g); g.connect(ka.ctx.destination); ka.osc.start();
+  } catch (e) {}
+  try {
+    if (navigator.locks) navigator.locks.request('probe-keepalive', () => new Promise(r => { ka.release = r; }));
+  } catch (e) {}
+  try {
+    if (navigator.wakeLock) {
+      const w = await navigator.wakeLock.request('screen');
+      if (ka.stopped) w.release(); else ka.wake = w; // لو الفحص خلص أثناء الانتظار
+    }
+  } catch (e) {}
+}
+function stopKeepAlive() {
+  const ka = keepAlive;
+  if (!ka) return;
+  keepAlive = null; ka.stopped = true;
+  try { ka.osc && ka.osc.stop(); } catch (e) {}
+  try { ka.ctx && ka.ctx.close(); } catch (e) {}
+  try { ka.release && ka.release(); } catch (e) {}
+  try { ka.wake && ka.wake.release(); } catch (e) {}
+}
+
 async function probeChannel(ch, timeout = 12000) {
-  const v = document.createElement('video'); v.muted = true;
+  const v = document.createElement('video'); v.muted = true; v.playsInline = true;
+  v.style.cssText = 'position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;left:-10px;top:-10px';
+  document.body.appendChild(v);
   const p = new shaka.Player(v);
-  let late = null, timer;
+  let late = null;
   p.addEventListener('error', ev => { late = late || ev.detail; });
   try {
     if (Object.keys(ch.allKeys).length) p.configure({ drm: { clearKeys: ch.allKeys } });
-    await Promise.race([p.load(ch.url), new Promise((_, rej) => { timer = setTimeout(() => rej({ code: 1003 }), timeout); })]);
-    clearTimeout(timer);
-    await new Promise(r => setTimeout(r, 3500));
+    await Promise.race([
+      p.load(ch.url),
+      sleep(timeout).then(() => { throw { code: 1003 }; })
+    ]);
+    await sleep(3500);
     if (late) throw late;
     return { s: 'ok', msg: '✅ تشتغل بدون هيدرز مخصصة' };
-  } catch (e) { clearTimeout(timer); return classifyError(e); }
-  finally { try { await p.destroy(); } catch (e) {} }
+  } catch (e) { return classifyError(e); }
+  finally { try { await p.destroy(); } catch (e) {} v.remove(); }
 }
 
 let probeToken = 0;
 async function probeAll() {
   const token = ++probeToken;
+  startKeepAlive();
   const list = extractedChannels.slice(), queue = list.slice();
   const prog = document.getElementById('probeProg');
   let done = 0;
@@ -447,7 +495,12 @@ async function probeAll() {
       if (done % 4 === 0) renderPlaylistUI();
     }
   };
-  await Promise.all([worker(), worker(), worker(), worker(), worker()]);
+  try {
+    await Promise.all([worker(), worker(), worker(), worker(), worker()]);
+  } finally {
+    // يوقف الصوت فقط لو ده لسه الفحص الحالي (مش فحص جديد بدأ بعده)
+    if (token === probeToken) stopKeepAlive();
+  }
   if (token !== probeToken) { prog.textContent = ''; return; }
   prog.textContent = ''; renderPlaylistUI();
   const c = k => list.filter(x => x.probe && x.probe.s === k).length;
@@ -601,7 +654,9 @@ function clearAll() {
   ['autoInput', 'streamUrl', 'keyId', 'keyVal', 'searchInput'].forEach(id => document.getElementById(id).value = '');
   toggleSearch(false);
   extractedChannels = []; activeCh = null; probeToken++;
+  stopKeepAlive();
   filterByFormat('all');
+  document.getElementById('probeProg').textContent = '';
   document.getElementById('playlistContainer').innerHTML = `<div style="color:#777;text-align:center;font-size:12px;margin-top:20px">تم التطهير بنجاح</div>`;
   document.getElementById('listCount').innerText = '0';
   document.getElementById('video-container').innerHTML = '';
